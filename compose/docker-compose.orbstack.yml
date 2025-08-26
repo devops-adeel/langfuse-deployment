@@ -1,0 +1,93 @@
+# OrbStack-specific overlay for docker-compose.yml
+# This file adds custom domains and optimizations for OrbStack
+# Usage: docker compose -f docker-compose.yml -f docker-compose.orbstack.yml up -d
+#
+# Services will be accessible at:
+#   - Langfuse Web: https://langfuse.local
+#   - MinIO Console: https://minio.local
+#   - PostgreSQL: postgres.langfuse.local:5432
+#   - ClickHouse HTTP: https://clickhouse.local
+#   - Redis: redis.langfuse.local:6379
+#   - Worker: https://worker.langfuse.local
+#
+# Automatic domains (no configuration needed):
+#   - https://langfuse-web.langfuse-prod.orb.local
+#   - https://langfuse-worker.langfuse-prod.orb.local
+#   - https://minio.langfuse-prod.orb.local
+#   - https://clickhouse.langfuse-prod.orb.local
+#   - https://redis.langfuse-prod.orb.local
+#   - https://postgres.langfuse-prod.orb.local
+
+services:
+  langfuse-web:
+    labels:
+      # Custom domain for easier access
+      - dev.orbstack.domains=langfuse.local,web.langfuse.local
+      # Explicitly specify the HTTP port
+      - dev.orbstack.http-port=3000
+    environment:
+      # Update the NextAuth URL to use the custom domain
+      - NEXTAUTH_URL=https://langfuse.local
+      # Update S3 endpoints to use OrbStack domains
+      - LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT=https://minio.langfuse-prod.orb.local
+      - LANGFUSE_S3_MEDIA_UPLOAD_EXTERNAL_ENDPOINT=https://minio.local
+      - LANGFUSE_S3_BATCH_EXPORT_EXTERNAL_ENDPOINT=https://minio.local
+    # Add port mapping for alternative access
+    ports:
+      - "3002:3000"
+
+  langfuse-worker:
+    labels:
+      # Worker with custom domain for monitoring
+      - dev.orbstack.domains=worker.langfuse.local
+      - dev.orbstack.http-port=3030
+    environment:
+      # Update URL to match the web service
+      - NEXTAUTH_URL=https://langfuse.local
+      # Update S3 endpoints to use internal OrbStack domains
+      - LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT=http://minio:9000
+      - LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT=https://minio.langfuse-prod.orb.local
+    # Remove port mapping - use OrbStack domains
+    ports: []
+
+  minio:
+    labels:
+      # Custom domains for MinIO API and console
+      - dev.orbstack.domains=minio.local,s3.langfuse.local,minio-console.local
+      # MinIO API on port 9000
+      - dev.orbstack.http-port=9000
+    # Remove port mappings - use OrbStack domains
+    ports: []
+
+  clickhouse:
+    labels:
+      # Custom domain for ClickHouse HTTP interface
+      - dev.orbstack.domains=clickhouse.local,clickhouse.langfuse.local
+      - dev.orbstack.http-port=8123
+    # Remove port mappings - use OrbStack domains
+    ports: []
+
+  redis:
+    labels:
+      # Custom domain for Redis
+      - dev.orbstack.domains=redis.langfuse.local,cache.local
+      # Redis default port
+      - dev.orbstack.tcp-port=6379
+    # Remove port mapping - use OrbStack domains
+    ports: []
+
+  postgres:
+    labels:
+      # Custom domain for PostgreSQL
+      - dev.orbstack.domains=postgres.langfuse.local,db.local
+      # PostgreSQL default port
+      - dev.orbstack.tcp-port=5432
+    # Remove port mapping - use OrbStack domains
+    ports: []
+
+# Network configuration optimized for OrbStack
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1400  # Slightly lower MTU for stability

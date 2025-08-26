@@ -1,0 +1,87 @@
+# Docker Volume Backup Service
+# Uses offen/docker-volume-backup for sophisticated backup management
+# This service runs alongside the main Langfuse stack
+
+services:
+  backup:
+    image: offen/docker-volume-backup:${BACKUP_VERSION:-v2.43.0}
+    restart: unless-stopped
+    environment:
+      # Backup filename with timestamp
+      BACKUP_FILENAME: langfuse-%Y-%m-%d_%H-%M-%S.tar.gz
+      
+      # Cron schedule - daily at 2 AM
+      BACKUP_CRON_EXPRESSION: ${BACKUP_CRON:-0 2 * * *}
+      
+      # Retention policy
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
+      BACKUP_PRUNING_PREFIX: langfuse-
+      BACKUP_PRUNING_LEEWAY: 1h
+      
+      # Stop containers during backup for consistency
+      BACKUP_STOP_DURING_BACKUP_LABEL: langfuse-prod
+      BACKUP_STOP_SERVICE_TIMEOUT: 5m
+      
+      # Label for custom commands
+      EXEC_LABEL: langfuse-backup
+      EXEC_FORWARD_OUTPUT: true
+      
+      # Local archive settings
+      BACKUP_ARCHIVE: /archive
+      BACKUP_LATEST_SYMLINK: langfuse-latest.tar.gz
+      
+      # Compression
+      BACKUP_COMPRESSION: gz
+      
+      # Notification level (error or info)
+      NOTIFICATION_LEVEL: ${NOTIFICATION_LEVEL:-error}
+      NOTIFICATION_URLS: ${NOTIFICATION_URLS:-}
+      
+    volumes:
+      # Mount all volumes read-only for backup
+      - langfuse_postgres_data:/backup/postgres:ro
+      - langfuse_clickhouse_data:/backup/clickhouse:ro
+      - langfuse_clickhouse_logs:/backup/clickhouse-logs:ro
+      - langfuse_minio_data:/backup/minio:ro
+      - /tmp/postgres-backup:/backup/postgres-dump:rw
+      
+      # Docker socket for container management
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      
+      # Primary backup location
+      - ${BACKUP_DIR:-${HOME}/LangfuseBackups}:/archive
+      
+      # External backup location (when available)
+      # Uncomment when external drive is mounted
+      # - /Volumes/SanDisk/LangfuseBackups:/external:rw
+      
+    labels:
+      # Post-backup sync to external drive if available
+      - docker-volume-backup.archive-post=/bin/sh -c '[ -d /external ] && rsync -av --delete /archive/ /external/ || echo "External drive not mounted, skipping sync"'
+      
+    depends_on:
+      - postgres
+      - clickhouse
+      - minio
+      - redis
+
+  # Optional: Manual backup trigger service
+  # Run with: docker compose run --rm backup-manual
+  backup-manual:
+    image: offen/docker-volume-backup:${BACKUP_VERSION:-v2.43.0}
+    profiles:
+      - manual
+    entrypoint: backup
+    environment:
+      BACKUP_FILENAME: langfuse-manual-%Y-%m-%d_%H-%M-%S.tar.gz
+      BACKUP_ARCHIVE: /archive
+      BACKUP_STOP_DURING_BACKUP_LABEL: langfuse-prod
+      EXEC_LABEL: langfuse-backup
+      EXEC_FORWARD_OUTPUT: true
+    volumes:
+      - langfuse_postgres_data:/backup/postgres:ro
+      - langfuse_clickhouse_data:/backup/clickhouse:ro
+      - langfuse_clickhouse_logs:/backup/clickhouse-logs:ro
+      - langfuse_minio_data:/backup/minio:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${BACKUP_DIR:-${HOME}/LangfuseBackups}:/archive

@@ -135,9 +135,10 @@ services:
       # Backup system integration (do not modify)
       - docker-volume-backup.stop-during-backup=langfuse-prod
     
-    # Alternative port for debugging (in addition to domains)
-    ports:
-      - "3002:3000"
+    # No ports exposed - access via langfuse.local
+    # Uncomment below for debugging without domains:
+    # ports:
+    #   - "3002:3000"
     
     environment:
       <<: *langfuse-worker-env

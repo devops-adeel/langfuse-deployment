@@ -1,0 +1,48 @@
+# Environment files with secrets
+.env
+.env.*
+!.env.*.template
+secrets/.env.secrets
+secrets/.migration-secrets
+
+# Backup files
+*.bak
+*.tmp
+*.swp
+*.log
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Docker
+.docker-backup-lock
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Migration artifacts
+migration-*.log
+migration-report.md
+
+# Temporary files
+/tmp/
+*.pid
+*.seed
+*.pid.lock
+
+# Archives and backups (don't commit actual backups)
+*.tar.gz
+*.zip
+*.tar
+*.gz
+
+# External drive sync lock
+.sync-lock
+
+# Custom local configuration
+*.local
+*.private

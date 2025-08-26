@@ -1,0 +1,30 @@
+# Langfuse Deployment Version Lock File
+# This file contains pinned versions for all services
+# Update carefully and test thoroughly before deploying
+
+# Last Updated: 2024-08-26
+# Langfuse Release: v3.97.0
+
+# Core Services
+LANGFUSE_VERSION=3.97.0
+LANGFUSE_WORKER_VERSION=3.97.0
+
+# Database Services  
+POSTGRES_VERSION=17-alpine
+CLICKHOUSE_VERSION=24.3.3.102-alpine
+
+# Infrastructure Services
+REDIS_VERSION=7.2.5-alpine
+MINIO_VERSION=latest
+
+# Backup Service
+BACKUP_VERSION=v2.43.0
+
+# Version History
+# ===============
+# 2024-08-26: Initial deployment with Langfuse v3.97.0
+# - PostgreSQL 15.7 (latest stable)
+# - ClickHouse 24.3.3 (LTS version)
+# - Redis 7.2.5 (stable)
+# - MinIO RELEASE.2024-08-17
+# - offen/docker-volume-backup v2.43.0

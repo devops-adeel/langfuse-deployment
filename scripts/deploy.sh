@@ -126,12 +126,6 @@ deploy_services() {
     
     cd "$COMPOSE_DIR"
     
-    # Add OrbStack overlay if on macOS
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        log_info "Detected macOS, adding OrbStack configuration..."
-        compose_files="$compose_files -f docker-compose.orbstack.yml"
-    fi
-    
     # Add backup service for full deployment
     if [ "$deploy_mode" == "full" ]; then
         log_info "Including backup service..."

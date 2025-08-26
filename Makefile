@@ -4,7 +4,7 @@
 # Variables
 COMPOSE_PROJECT_NAME ?= langfuse-prod
 COMPOSE_DIR = compose
-COMPOSE_FILES = -f docker-compose.yml -f docker-compose.orbstack.yml -f docker-compose.backup.yml
+COMPOSE_FILES = -f docker-compose.yml -f docker-compose.backup.yml
 SCRIPTS_DIR = scripts
 BACKUP_DIR = backup
 

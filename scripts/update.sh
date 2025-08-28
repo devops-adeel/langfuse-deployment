@@ -39,25 +39,25 @@ log_prompt() {
 # Check for updates
 check_updates() {
     log_info "Checking for Langfuse updates..."
-    
+
     # Get current version
     source "$VERSIONS_FILE"
     local current_version="$LANGFUSE_VERSION"
-    
+
     log_info "Current Langfuse version: v${current_version}"
-    
+
     # Check latest release from GitHub
     local latest_release=$(curl -s https://api.github.com/repos/langfuse/langfuse/releases/latest | \
                           grep '"tag_name":' | \
                           sed -E 's/.*"v?([^"]+)".*/\1/')
-    
+
     if [ -z "$latest_release" ]; then
         log_warn "Could not fetch latest release information"
         return 1
     fi
-    
+
     log_info "Latest Langfuse version: v${latest_release}"
-    
+
     if [ "$current_version" == "$latest_release" ]; then
         log_info "You are running the latest version!"
         return 0
@@ -72,39 +72,39 @@ update_service_version() {
     local service="$1"
     local new_version="$2"
     local variable_name="${3:-${service^^}_VERSION}"
-    
+
     log_info "Updating $service to version $new_version..."
-    
+
     # Backup current versions file
     cp "$VERSIONS_FILE" "${VERSIONS_FILE}.bak"
-    
+
     # Update version in file
     sed -i.tmp "s/^${variable_name}=.*$/${variable_name}=${new_version}/" "$VERSIONS_FILE"
     rm "${VERSIONS_FILE}.tmp"
-    
+
     # Add to version history
     local date=$(date +%Y-%m-%d)
     echo "# $date: Updated $service to $new_version" >> "$VERSIONS_FILE"
-    
+
     log_info "$service version updated in versions.lock"
 }
 
 # Create pre-update backup
 create_backup() {
     log_info "Creating pre-update backup..."
-    
+
     # Trigger manual backup
     cd "$COMPOSE_DIR"
-    
+
     docker compose \
         -f docker-compose.yml \
         -f docker-compose.backup.yml \
         -p "$COMPOSE_PROJECT_NAME" \
         run --rm backup-manual
-    
+
     if [ $? -eq 0 ]; then
         log_info "Backup completed successfully"
-        
+
         # Get latest backup file
         local latest_backup=$(ls -t "$BACKUP_DIR"/langfuse-*.tar.gz | head -1)
         log_info "Backup saved as: $(basename "$latest_backup")"
@@ -121,12 +121,12 @@ create_backup() {
 # Pull new images
 pull_images() {
     log_info "Pulling new images..."
-    
+
     cd "$COMPOSE_DIR"
-    
+
     # Load new versions
     source "$VERSIONS_FILE"
-    
+
     # Export versions for docker compose
     export LANGFUSE_VERSION
     export LANGFUSE_WORKER_VERSION
@@ -135,13 +135,13 @@ pull_images() {
     export REDIS_VERSION
     export MINIO_VERSION
     export BACKUP_VERSION
-    
+
     docker compose \
         -f docker-compose.yml \
         -f docker-compose.orbstack.yml \
         -p "$COMPOSE_PROJECT_NAME" \
         pull
-    
+
     if [ $? -eq 0 ]; then
         log_info "Images pulled successfully"
     else
@@ -153,9 +153,9 @@ pull_images() {
 # Perform rolling update
 rolling_update() {
     log_info "Performing rolling update..."
-    
+
     cd "$PROJECT_ROOT"
-    
+
     # Stop services gracefully
     log_info "Stopping services..."
     docker compose \
@@ -163,11 +163,11 @@ rolling_update() {
         -f compose/docker-compose.orbstack.yml \
         -p "$COMPOSE_PROJECT_NAME" \
         stop langfuse-web langfuse-worker
-    
+
     # Update and start services
     log_info "Starting updated services..."
     "$PROJECT_ROOT/scripts/deploy.sh"
-    
+
     if [ $? -eq 0 ]; then
         log_info "Services updated successfully"
     else
@@ -180,16 +180,16 @@ rolling_update() {
 # Rollback update
 rollback_update() {
     log_warn "Rolling back to previous version..."
-    
+
     # Restore versions file
     if [ -f "${VERSIONS_FILE}.bak" ]; then
         mv "${VERSIONS_FILE}.bak" "$VERSIONS_FILE"
         log_info "Versions file restored"
     fi
-    
+
     # Redeploy with old versions
     "$PROJECT_ROOT/scripts/deploy.sh"
-    
+
     log_info "Rollback completed"
 }
 
@@ -206,10 +206,10 @@ interactive_update() {
     echo "7) Update all services"
     echo "0) Exit"
     echo ""
-    
+
     log_prompt "Select option (0-7):"
     read -r option
-    
+
     case $option in
         1)
             log_prompt "Enter new Langfuse version (e.g., 3.98.0):"
@@ -260,7 +260,7 @@ interactive_update() {
             exit 1
             ;;
     esac
-    
+
     log_prompt "Apply updates now? (y/n):"
     read -r answer
     if [ "$answer" == "y" ]; then
@@ -273,19 +273,19 @@ interactive_update() {
 # Main execution
 main() {
     local mode="${1:-check}"
-    
+
     log_info "Langfuse Update Manager"
     echo "======================="
-    
+
     case "$mode" in
         check)
             check_updates
             ;;
-        
+
         interactive)
             interactive_update
             ;;
-        
+
         apply)
             if [ $# -lt 3 ]; then
                 log_error "Usage: $0 apply <service> <version>"
@@ -296,11 +296,11 @@ main() {
             pull_images
             rolling_update
             ;;
-        
+
         rollback)
             rollback_update
             ;;
-        
+
         *)
             echo "Usage: $0 [check|interactive|apply|rollback]"
             echo "  check       - Check for updates (default)"

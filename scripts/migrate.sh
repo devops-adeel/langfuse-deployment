@@ -57,64 +57,64 @@ log_prompt() {
 # Pre-flight checks
 preflight_checks() {
     log_step "Running pre-flight checks"
-    
+
     # Check if old project exists
     if [ ! -d "$OLD_PROJECT_DIR" ]; then
         log_error "Old Langfuse project not found at: $OLD_PROJECT_DIR"
         exit 1
     fi
-    
+
     # Check if new deployment repo exists
     if [ ! -d "$PROJECT_ROOT" ]; then
         log_error "New deployment repository not found at: $PROJECT_ROOT"
         exit 1
     fi
-    
+
     # Check Docker
     if ! docker info >/dev/null 2>&1; then
         log_error "Docker is not running"
         exit 1
     fi
-    
+
     # Check 1Password CLI
     if ! command -v op &> /dev/null; then
         log_warn "1Password CLI not installed. You'll need to set up secrets manually."
         log_info "Install with: brew install --cask 1password-cli"
     fi
-    
+
     # Check if services are running
     if docker compose -p "$COMPOSE_PROJECT_NAME" ps --format json 2>/dev/null | jq -r '.[].State' | grep -q "running"; then
         log_info "Existing Langfuse services detected and running"
     else
         log_warn "No running Langfuse services detected"
     fi
-    
+
     log_info "Pre-flight checks completed"
 }
 
 # Backup current setup
 backup_current() {
     log_step "Creating backup of current setup"
-    
+
     local backup_name="pre-migration-$(date +%Y%m%d-%H%M%S)"
     local backup_path="${BACKUP_DIR}/${backup_name}"
-    
+
     mkdir -p "$backup_path"
-    
+
     # Backup docker-compose files
     log_info "Backing up configuration files..."
     cp -r "$OLD_PROJECT_DIR"/{docker-compose*.yml,.env*} "$backup_path/" 2>/dev/null || true
-    
+
     # Trigger data backup
     log_info "Creating data backup..."
     cd "$OLD_PROJECT_DIR"
-    
+
     # Check if backup script exists
     if [ -f "$OLD_PROJECT_DIR/backup/scripts/langfuse-backup.sh" ]; then
         bash "$OLD_PROJECT_DIR/backup/scripts/langfuse-backup.sh"
     else
         log_warn "No backup script found, attempting manual backup..."
-        
+
         # Manual backup using docker
         for volume in postgres clickhouse minio; do
             docker run --rm \
@@ -123,16 +123,16 @@ backup_current() {
                 alpine tar czf "/backup/${volume}-data.tar.gz" -C / data
         done
     fi
-    
+
     log_info "Backup created at: $backup_path"
 }
 
 # Extract secrets from current setup
 extract_secrets() {
     log_step "Extracting secrets from current configuration"
-    
+
     local env_file=""
-    
+
     # Find the active .env file
     if [ -f "$OLD_PROJECT_DIR/.env.docker-prod-orbstack" ]; then
         env_file="$OLD_PROJECT_DIR/.env.docker-prod-orbstack"
@@ -144,19 +144,19 @@ extract_secrets() {
         log_error "No environment file found in old project"
         exit 1
     fi
-    
+
     log_info "Using environment file: $env_file"
-    
+
     # Create temporary secrets file
     local temp_secrets="${PROJECT_ROOT}/secrets/.migration-secrets"
-    
+
     {
         echo "# Secrets extracted from migration - $(date)"
         echo "# IMPORTANT: Add these to 1Password and delete this file!"
         echo ""
         grep -E "PASSWORD|SECRET|KEY|AUTH" "$env_file" | grep -v "^#"
     } > "$temp_secrets"
-    
+
     log_warn "Secrets extracted to: $temp_secrets"
     log_warn "ACTION REQUIRED: Add these secrets to 1Password vault 'Langfuse-Prod'"
 }
@@ -164,9 +164,9 @@ extract_secrets() {
 # Stop old services
 stop_old_services() {
     log_step "Stopping existing Langfuse services"
-    
+
     cd "$OLD_PROJECT_DIR"
-    
+
     # Stop services but keep volumes
     if docker compose -p "$COMPOSE_PROJECT_NAME" ps --format json 2>/dev/null | jq -r '.[].State' | grep -q "running"; then
         log_info "Stopping services..."
@@ -180,12 +180,12 @@ stop_old_services() {
 # Setup 1Password vault
 setup_1password() {
     log_step "Setting up 1Password vault"
-    
+
     if ! command -v op &> /dev/null; then
         log_warn "1Password CLI not available, skipping..."
         return
     fi
-    
+
     log_info "Please ensure you have created the 'Langfuse-Prod' vault in 1Password"
     log_info "Required items to create:"
     echo "  • PostgreSQL (with fields: connection-string, password)"
@@ -195,10 +195,10 @@ setup_1password() {
     echo "  • MinIO (with fields: root-password, event-secret-key, media-secret-key, batch-secret-key)"
     echo "  • API (optional - with fields: public-key, secret-key)"
     echo ""
-    
+
     log_prompt "Have you configured all secrets in 1Password? (y/n):"
     read -r answer
-    
+
     if [ "$answer" != "y" ]; then
         log_warn "Please configure 1Password before proceeding with deployment"
         log_info "Refer to: ${PROJECT_ROOT}/secrets/.migration-secrets"
@@ -208,18 +208,18 @@ setup_1password() {
 # Verify volume compatibility
 verify_volumes() {
     log_step "Verifying Docker volumes"
-    
+
     local volumes=(
         "${COMPOSE_PROJECT_NAME}_langfuse_postgres_data"
         "${COMPOSE_PROJECT_NAME}_langfuse_clickhouse_data"
         "${COMPOSE_PROJECT_NAME}_langfuse_clickhouse_logs"
         "${COMPOSE_PROJECT_NAME}_langfuse_minio_data"
     )
-    
+
     for volume in "${volumes[@]}"; do
         if docker volume inspect "$volume" >/dev/null 2>&1; then
             log_info "✓ Volume exists: $volume"
-            
+
             # Get volume size
             local mountpoint=$(docker volume inspect "$volume" | jq -r '.[0].Mountpoint')
             if [ -n "$mountpoint" ] && [ "$mountpoint" != "null" ]; then
@@ -236,23 +236,23 @@ verify_volumes() {
 # Deploy new setup
 deploy_new() {
     log_step "Deploying from new repository"
-    
+
     cd "$PROJECT_ROOT"
-    
+
     # Make scripts executable
     chmod +x scripts/*.sh
     chmod +x backup/*.sh
-    
+
     log_info "Starting deployment..."
-    
+
     # Check if secrets are configured
     if [ -f "$PROJECT_ROOT/secrets/.migration-secrets" ]; then
         log_warn "Using migration secrets file (temporary)"
         log_warn "Remember to migrate these to 1Password!"
-        
+
         # Use migration secrets for now
         cp "$PROJECT_ROOT/secrets/.migration-secrets" "$PROJECT_ROOT/secrets/.env.secrets"
-        
+
         # Deploy without 1Password
         cd "$PROJECT_ROOT/compose"
         docker compose \
@@ -266,25 +266,25 @@ deploy_new() {
         # Deploy with 1Password
         "$PROJECT_ROOT/scripts/deploy.sh"
     fi
-    
+
     log_info "New deployment started"
 }
 
 # Verify new deployment
 verify_deployment() {
     log_step "Verifying new deployment"
-    
+
     sleep 10  # Wait for services to start
-    
+
     "$PROJECT_ROOT/scripts/health-check.sh"
-    
+
     log_info "Deployment verification complete"
 }
 
 # Cleanup old setup
 cleanup_old() {
     log_step "Cleanup options for old setup"
-    
+
     log_info "The migration is complete. The old setup at:"
     echo "  $OLD_PROJECT_DIR"
     echo ""
@@ -294,10 +294,10 @@ cleanup_old() {
     echo "  2. Remove .env files with secrets"
     echo "  3. Keep the repository for upstream tracking"
     echo ""
-    
+
     log_prompt "Remove sensitive .env files from old setup? (y/n):"
     read -r answer
-    
+
     if [ "$answer" == "y" ]; then
         rm -f "$OLD_PROJECT_DIR"/.env*
         log_info "Sensitive files removed"
@@ -307,9 +307,9 @@ cleanup_old() {
 # Create migration report
 create_report() {
     log_step "Creating migration report"
-    
+
     local report_file="${PROJECT_ROOT}/migration-report.md"
-    
+
     {
         echo "# Langfuse Migration Report"
         echo "Date: $(date)"
@@ -337,20 +337,20 @@ create_report() {
         echo "- MinIO Console: https://minio.local"
         echo ""
     } > "$report_file"
-    
+
     log_info "Migration report saved to: $report_file"
 }
 
 # Main migration flow
 main() {
     echo -e "${BLUE}╔═══════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║    Langfuse Deployment Migration Tool    ║${NC}"  
+    echo -e "${BLUE}║    Langfuse Deployment Migration Tool    ║${NC}"
     echo -e "${BLUE}╚═══════════════════════════════════════════╝${NC}"
     echo ""
     log_info "Starting migration from old setup to new deployment repository"
     log_info "Migration log: $MIGRATION_LOG"
     echo ""
-    
+
     # Confirm migration
     log_warn "This will migrate your existing Langfuse installation"
     log_warn "From: $OLD_PROJECT_DIR"
@@ -358,12 +358,12 @@ main() {
     echo ""
     log_prompt "Continue with migration? (yes/no):"
     read -r confirmation
-    
+
     if [ "$confirmation" != "yes" ]; then
         log_info "Migration cancelled"
         exit 0
     fi
-    
+
     # Run migration steps
     preflight_checks
     backup_current
@@ -375,7 +375,7 @@ main() {
     verify_deployment
     cleanup_old
     create_report
-    
+
     echo ""
     echo -e "${GREEN}═══════════════════════════════════════════${NC}"
     echo -e "${GREEN}  Migration completed successfully! ✓${NC}"

@@ -37,7 +37,7 @@ make logs-errors        # Show recent errors only
 ### Database Access
 ```bash
 make db-shell            # PostgreSQL interactive shell
-make clickhouse-shell    # ClickHouse interactive shell  
+make clickhouse-shell    # ClickHouse interactive shell
 make redis-cli           # Redis CLI
 ```
 

@@ -45,16 +45,16 @@ check_external_drive() {
             return 0
         else
             log_error "External drive is mounted but not writable"
-            
+
             # Attempt to fix read-only issue (macOS specific)
             if [[ "$OSTYPE" == "darwin"* ]]; then
                 log_info "Attempting to fix read-only issue..."
-                
+
                 # Try to remount as read-write
                 local device=$(mount | grep "/Volumes/${EXTERNAL_DRIVE_NAME}" | awk '{print $1}')
                 if [ -n "$device" ]; then
                     log_info "Device: $device"
-                    
+
                     # Unmount and remount
                     if diskutil unmount "/Volumes/${EXTERNAL_DRIVE_NAME}" 2>/dev/null; then
                         sleep 2
@@ -64,7 +64,7 @@ check_external_drive() {
                         fi
                     fi
                 fi
-                
+
                 log_error "Could not remount drive as read-write"
                 log_info "Try: sudo mount -uw /Volumes/${EXTERNAL_DRIVE_NAME}"
             fi
@@ -79,7 +79,7 @@ check_external_drive() {
 create_lock() {
     if [ -f "$LOCK_FILE" ]; then
         local lock_pid=$(cat "$LOCK_FILE")
-        
+
         # Check if process is still running
         if ps -p "$lock_pid" > /dev/null 2>&1; then
             log_warn "Another sync process is running (PID: $lock_pid)"
@@ -89,7 +89,7 @@ create_lock() {
             rm -f "$LOCK_FILE"
         fi
     fi
-    
+
     echo $$ > "$LOCK_FILE"
 }
 
@@ -109,23 +109,23 @@ trap cleanup EXIT INT TERM
 # Sync backups using rsync
 sync_backups() {
     log_info "Starting backup synchronization..."
-    
+
     # Create external backup directory if it doesn't exist
     if [ ! -d "$EXTERNAL_BACKUP_DIR" ]; then
         log_info "Creating backup directory on external drive..."
         mkdir -p "$EXTERNAL_BACKUP_DIR"
     fi
-    
+
     # Calculate space requirements
     local source_size=$(du -sh "$PRIMARY_BACKUP_DIR" 2>/dev/null | cut -f1)
     local available_space=$(df -h "/Volumes/${EXTERNAL_DRIVE_NAME}" | tail -1 | awk '{print $4}')
-    
+
     log_info "Source size: $source_size"
     log_info "Available space on external drive: $available_space"
-    
+
     # Perform sync using rsync
     log_info "Syncing backups to external drive..."
-    
+
     rsync -av --delete \
         --exclude=".sync-lock" \
         --exclude="*.log" \
@@ -134,17 +134,17 @@ sync_backups() {
         --progress \
         "$PRIMARY_BACKUP_DIR/" \
         "$EXTERNAL_BACKUP_DIR/"
-    
+
     if [ $? -eq 0 ]; then
         log_info "Sync completed successfully!"
-        
+
         # Verify sync
         local primary_count=$(find "$PRIMARY_BACKUP_DIR" -name "langfuse-*.tar.gz" | wc -l)
         local external_count=$(find "$EXTERNAL_BACKUP_DIR" -name "langfuse-*.tar.gz" | wc -l)
-        
+
         log_info "Primary backups: $primary_count files"
         log_info "External backups: $external_count files"
-        
+
         if [ "$primary_count" -eq "$external_count" ]; then
             log_info "Backup counts match ✓"
         else
@@ -159,9 +159,9 @@ sync_backups() {
 # Apply retention policy on external drive
 apply_retention_policy() {
     log_info "Applying retention policy on external drive..."
-    
+
     local retention_days="${BACKUP_RETENTION_DAYS:-30}"
-    
+
     # Find and remove old backups (older than retention period)
     find "$EXTERNAL_BACKUP_DIR" \
         -name "langfuse-*.tar.gz" \
@@ -169,14 +169,14 @@ apply_retention_policy() {
         -mtime +${retention_days} \
         -exec rm -f {} \; \
         -exec echo "Removed old backup: {}" \;
-        
+
     log_info "Retention policy applied (keeping last $retention_days days)"
 }
 
 # Create sync report
 create_report() {
     local report_file="${EXTERNAL_BACKUP_DIR}/sync-report.txt"
-    
+
     {
         echo "Langfuse Backup Sync Report"
         echo "==========================="
@@ -192,18 +192,18 @@ create_report() {
         echo "-----------"
         df -h "/Volumes/${EXTERNAL_DRIVE_NAME}"
     } > "$report_file"
-    
+
     log_info "Sync report created: $report_file"
 }
 
 # Monitor mode - wait for drive and sync
 monitor_mode() {
     log_info "Monitor mode: Waiting for external drive..."
-    
+
     local check_interval=30
     local max_checks=120  # 1 hour maximum
     local check_count=0
-    
+
     while [ $check_count -lt $max_checks ]; do
         if check_external_drive; then
             log_info "External drive detected!"
@@ -213,11 +213,11 @@ monitor_mode() {
             log_info "Monitor mode: Sync completed, exiting."
             exit 0
         fi
-        
+
         check_count=$((check_count + 1))
         sleep $check_interval
     done
-    
+
     log_warn "Monitor mode: Timeout reached without detecting drive."
     exit 1
 }
@@ -225,13 +225,13 @@ monitor_mode() {
 # Main execution
 main() {
     local mode="${1:-sync}"
-    
+
     log_info "Langfuse External Drive Backup Sync"
     log_info "===================================="
-    
+
     # Create lock
     create_lock
-    
+
     case "$mode" in
         sync)
             if check_external_drive; then
@@ -245,11 +245,11 @@ main() {
                 exit 1
             fi
             ;;
-        
+
         monitor)
             monitor_mode
             ;;
-        
+
         check)
             if check_external_drive; then
                 log_info "External drive is available and writable"
@@ -259,7 +259,7 @@ main() {
                 exit 1
             fi
             ;;
-        
+
         *)
             log_error "Unknown mode: $mode"
             echo "Usage: $0 [sync|monitor|check]"

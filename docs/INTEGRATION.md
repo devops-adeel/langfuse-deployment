@@ -40,7 +40,7 @@ async def process_request(query: str):
     # Get OTel trace context
     current_span = trace.get_current_span()
     span_context = current_span.get_span_context()
-    
+
     # Share trace ID between systems
     langfuse.update_current_trace(
         metadata={
@@ -48,7 +48,7 @@ async def process_request(query: str):
             "tempo_span_id": format(span_context.span_id, '016x')
         }
     )
-    
+
     # Your LLM logic here
     result = await llm.complete(query)
     return result
@@ -104,7 +104,7 @@ Import to Grafana: `http://grafana.local/dashboard/import`
     },
     {
       "title": "Infrastructure Bottlenecks",
-      "datasource": "Prometheus", 
+      "datasource": "Prometheus",
       "query": "container_memory_usage_bytes{name=~\"langfuse.*\"}"
     }
   ]
@@ -157,14 +157,14 @@ open "http://grafana.local/explore?traceID=$TEMPO_ID"
 def check_memory_loops(trace_id: str):
     # Query Tempo for repetitive patterns
     query = f'{{ trace:id = "{trace_id}" && name = "memory_search" }}'
-    
+
     response = requests.get(
         "http://tempo.local/api/search",
         params={"q": query}
     )
-    
+
     spans = response.json()["traces"][0]["spans"]
-    
+
     if len([s for s in spans if "memory_search" in s["name"]]) > 10:
         print(f"⚠️ Memory loop detected in trace {trace_id}")
         print(f"View in Langfuse: https://langfuse.local/trace/{trace_id}")
@@ -180,19 +180,19 @@ def analyze_trace_cost(langfuse_trace_id: str):
         f"https://langfuse.local/api/public/traces/{langfuse_trace_id}"
     )
     llm_cost = langfuse_response.json()["totalCost"]
-    
+
     # Get infrastructure metrics from Prometheus
     tempo_id = langfuse_response.json()["metadata"]["tempo_trace_id"]
     prom_query = f'sum(rate(container_cpu_usage_seconds_total{{trace_id="{tempo_id}"}}[5m]))'
-    
+
     prom_response = requests.get(
         "http://prometheus.local/api/v1/query",
         params={"query": prom_query}
     )
-    
+
     cpu_usage = float(prom_response.json()["data"]["result"][0]["value"][1])
     infra_cost = cpu_usage * 0.024  # $/cpu-hour
-    
+
     return {
         "trace_id": langfuse_trace_id,
         "llm_cost_usd": llm_cost,
@@ -247,7 +247,7 @@ langfuse-web:
     LANGFUSE_ENABLE_OTLP: "true"
     OTEL_EXPORTER_OTLP_ENDPOINT: "http://alloy.local:4318"
     OTEL_SERVICE_NAME: "langfuse"
-    
+
     # Trace sampling (production)
     OTEL_TRACES_SAMPLER: "traceidratio"
     OTEL_TRACES_SAMPLER_ARG: "0.1"  # 10% sampling

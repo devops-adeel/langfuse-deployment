@@ -24,6 +24,7 @@ open https://langfuse.local
 
 - [Features](#features)
 - [Observability Integration](#-observability-integration)
+- [Security](#-security)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Secret Management](#secret-management)
@@ -36,6 +37,7 @@ open https://langfuse.local
 ## ✨ Features
 
 - **🔐 Secure Secret Management**: 1Password CLI integration for zero-secret deployment
+- **🛡️ Secret Scanning**: Pre-commit hooks and CI/CD pipeline prevent accidental secret exposure
 - **📍 Version Pinning**: Controlled updates with locked versions
 - **💾 Automated Backups**: Daily backups with configurable retention using `offen/docker-volume-backup`
 - **🔄 External Drive Sync**: Automatic backup synchronization to external storage
@@ -66,6 +68,31 @@ LLM observability that **integrates with [Grafana-OrbStack](../grafana-orbstack)
 - **Unified Debugging**: Link slow LLM responses to infrastructure bottlenecks
 
 📚 **[Full Integration Guide](docs/INTEGRATION.md)** | 📊 **[Grafana Repository](../grafana-orbstack)**
+
+## 🛡️ Security
+
+![Gitleaks](https://img.shields.io/badge/protected%20by-gitleaks-blue)
+
+This repository implements comprehensive secret scanning to prevent accidental exposure of credentials:
+
+- **Pre-commit Hooks**: Blocks commits containing secrets locally
+- **GitHub Actions**: Auto-closes PRs with detected secrets
+- **1Password Integration**: All secrets stored securely, never in code
+
+### Security Setup
+
+```bash
+# Install security tools and pre-commit hooks
+make security-init
+
+# Run manual security scan
+make security-scan
+
+# Test security detection
+make security-test
+```
+
+For detailed security information, see [SECURITY.md](SECURITY.md) and the [Security Runbook](.security/RUNBOOK.md).
 
 ## 🛠 Prerequisites
 
@@ -100,12 +127,14 @@ cd langfuse-deployment
 
 ```bash
 make init
+make security-init  # Install security hooks
 ```
 
 This will:
 - Make all scripts executable
 - Check prerequisites
 - Verify Docker installation
+- Install pre-commit hooks for secret scanning
 
 ### 3. Configure 1Password Vault
 

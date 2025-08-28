@@ -1,0 +1,162 @@
+# Gitleaks Configuration for Langfuse Deployment
+# Custom rules for detecting Langfuse and infrastructure secrets
+# while allowing 1Password references (op://)
+
+title = "Langfuse Deployment Security Configuration"
+
+# Extend the default Gitleaks configuration
+[extend]
+useDefault = true
+# Disable overly generic rules that cause false positives
+disabledRules = []
+
+# Global allowlist - applies to all rules
+[[allowlists]]
+description = "Allow 1Password secret references (op://)"
+regexTarget = "line"
+regexes = [
+    # Standard 1Password reference format: op://vault/item/field
+    '''op://[A-Za-z0-9\-_]+/[A-Za-z0-9\-_]+/[A-Za-z0-9\-_]+''',
+    # Allow partial references during editing
+    '''op://[A-Za-z0-9\-_]+/[A-Za-z0-9\-_]+''',
+    # Allow vault-only references
+    '''op://[A-Za-z0-9\-_]+'''
+]
+
+[[allowlists]]
+description = "Allow placeholder patterns in example and template files"
+paths = [
+    '''\.env\.example$''',
+    '''\.env\.template$''',
+    '''\.env\.sample$''',
+    '''example''',
+    '''template'''
+]
+regexes = [
+    '''your-[a-z\-]*-here''',
+    '''PLACEHOLDER[_A-Z]*''',
+    '''CHANGE[_A-Z]*ME''',
+    '''YOUR_ACTUAL_[A-Z_]+''',
+    '''<[A-Z_]+>''',
+    '''\$\{[A-Z_]+\}''',
+    '''xxx+'''
+]
+
+[[allowlists]]
+description = "Allow environment variable references in Docker and shell files"
+paths = [
+    '''docker-compose.*\.ya?ml$''',
+    '''\.sh$''',
+    '''Makefile$'''
+]
+regexes = [
+    # Docker Compose variable substitution
+    '''\$\{[A-Z_]+[:\-][^}]*\}''',
+    # Shell variable references
+    '''\$[A-Z_]+'''
+]
+
+# Custom Rules for Langfuse-specific secrets
+
+[[rules]]
+id = "langfuse-public-key"
+description = "Langfuse Public API Key"
+regex = '''pk-lf-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'''
+keywords = ["pk-lf", "langfuse"]
+tags = ["langfuse", "api-key", "public"]
+
+[[rules.allowlists]]
+description = "Allow test keys"
+regexes = [
+    '''pk-lf-test-[0-9]{8}-[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{12}''',
+    '''pk-lf-00000000-0000-0000-0000-000000000000'''
+]
+
+[[rules]]
+id = "langfuse-secret-key"
+description = "Langfuse Secret API Key"
+regex = '''sk-lf-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'''
+keywords = ["sk-lf", "langfuse", "secret"]
+tags = ["langfuse", "api-key", "secret", "high-severity"]
+
+[[rules.allowlists]]
+description = "Allow test keys"
+regexes = [
+    '''sk-lf-test-[0-9]{8}-[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{12}''',
+    '''sk-lf-00000000-0000-0000-0000-000000000000'''
+]
+
+# PostgreSQL connection strings and passwords
+[[rules]]
+id = "postgres-connection-string"
+description = "PostgreSQL Connection String with embedded password"
+regex = '''postgres(?:ql)?://[^:]+:[^@]{8,}@[^/]+'''
+keywords = ["postgres://", "postgresql://"]
+tags = ["database", "postgres", "connection-string", "high-severity"]
+
+[[rules.allowlists]]
+description = "Allow localhost and example connections"
+regexes = [
+    '''postgres(?:ql)?://[^:]+:password@''',
+    '''postgres(?:ql)?://[^:]+:changeme@''',
+    '''postgres(?:ql)?://[^:]+:example@''',
+    '''postgres(?:ql)?://[^:]+:YOUR_PASSWORD@''',
+    '''postgres(?:ql)?://[^:]+:\$\{[^}]+\}@'''
+]
+
+# ClickHouse credentials
+[[rules]]
+id = "clickhouse-password"
+description = "ClickHouse Password in configuration"
+regex = '''CLICKHOUSE_PASSWORD\s*[=:]\s*["']?[^"'\s]{8,}["']?'''
+keywords = ["CLICKHOUSE_PASSWORD"]
+tags = ["database", "clickhouse", "password", "high-severity"]
+
+# MinIO/S3 credentials
+[[rules]]
+id = "minio-secret-key"
+description = "MinIO/S3 Secret Access Key"
+regex = '''(MINIO|S3)_[A-Z_]*SECRET[A-Z_]*\s*[=:]\s*["']?[A-Za-z0-9+/]{20,}["']?'''
+keywords = ["MINIO", "S3", "SECRET"]
+tags = ["storage", "minio", "s3", "secret-key", "high-severity"]
+
+# Redis authentication
+[[rules]]
+id = "redis-auth"
+description = "Redis Authentication Password"
+regex = '''REDIS_(AUTH|PASSWORD)\s*[=:]\s*["']?[^"'\s]{8,}["']?'''
+keywords = ["REDIS_AUTH", "REDIS_PASSWORD"]
+tags = ["database", "redis", "password", "high-severity"]
+
+# Encryption keys and salts
+[[rules]]
+id = "encryption-key"
+description = "Encryption Key or Salt"
+regex = '''(ENCRYPTION_KEY|SALT|NEXTAUTH_SECRET)\s*[=:]\s*["']?[A-Za-z0-9+/=]{16,}["']?'''
+keywords = ["ENCRYPTION_KEY", "SALT", "NEXTAUTH_SECRET"]
+tags = ["security", "encryption", "secret", "critical"]
+
+# Files to scan
+[scan]
+paths = [
+    "*.yml",
+    "*.yaml",
+    "*.json",
+    "*.env*",
+    "*.sh",
+    "*.bash",
+    "Dockerfile*",
+    "docker-compose*",
+    "Makefile",
+    "*.md",
+    "*.py",
+    "*.js",
+    "*.ts",
+    "*.tsx",
+    "*.jsx"
+]
+
+# Performance settings
+[performance]
+maxTargetMegabytes = 100  # Don't scan files larger than 100MB
+maxFileSizeKB = 500       # Skip individual files larger than 500KB

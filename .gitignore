@@ -46,3 +46,9 @@ migration-report.md
 # Custom local configuration
 *.local
 *.private
+
+# Security
+.security/incidents.log
+.security/*.log
+security-report.json
+gitleaks-report.json

@@ -232,13 +232,110 @@ urls: ## Show service URLs
 	@echo "  Email:    demo@langfuse.com"
 	@echo "  Password: password"
 
+# Security operations
+.PHONY: security-init
+security-init: ## Install and configure security tools (pre-commit hooks)
+	@echo "$(BLUE)Installing security tools...$(NC)"
+	@command -v pip >/dev/null 2>&1 || { echo "$(RED)pip is not installed$(NC)"; exit 1; }
+	@pip install --quiet pre-commit || pip install --user pre-commit
+	@pre-commit install
+	@echo "$(GREEN)✓ Pre-commit hooks installed$(NC)"
+	@echo "$(BLUE)Verifying Gitleaks...$(NC)"
+	@command -v gitleaks >/dev/null 2>&1 || echo "$(YELLOW)⚠ Gitleaks not installed. Install with: brew install gitleaks$(NC)"
+	@echo "$(GREEN)✓ Security setup complete$(NC)"
+
+.PHONY: security-scan
+security-scan: ## Run security scan for secrets and vulnerabilities
+	@echo "$(BLUE)Scanning for secrets...$(NC)"
+	@if command -v gitleaks >/dev/null 2>&1; then \
+		gitleaks detect -s . -c .gitleaks.toml --exit-code 0 || { \
+			echo "$(RED)⚠ Secrets detected! Check output above$(NC)"; \
+			exit 1; \
+		}; \
+		echo "$(GREEN)✓ No secrets detected$(NC)"; \
+	else \
+		echo "$(YELLOW)Gitleaks not installed. Using pre-commit...$(NC)"; \
+		pre-commit run gitleaks --all-files; \
+	fi
+
+.PHONY: security-test
+security-test: ## Test security scanning with dummy secrets
+	@echo "$(BLUE)Testing secret detection...$(NC)"
+	@echo "Testing with dummy Langfuse secret key..."
+	@echo "sk-lf-""12345678""-1234-1234-1234-""123456789012" > /tmp/security-test.txt
+	@if gitleaks detect -s /tmp/security-test.txt --no-git 2>&1 | grep -q "leaks found"; then \
+		echo "$(GREEN)✓ Detection working - dummy secret caught$(NC)"; \
+	else \
+		echo "$(RED)❌ Detection failed - dummy secret not caught$(NC)"; \
+	fi
+	@rm -f /tmp/security-test.txt
+	@echo "Testing with 1Password reference..."
+	@echo "DATABASE_URL=op://Langfuse-Prod/PostgreSQL/connection-string" > /tmp/security-test.env
+	@if gitleaks detect -s /tmp/security-test.env --no-git -c .gitleaks.toml 2>&1 | grep -q "no leaks found"; then \
+		echo "$(GREEN)✓ 1Password references correctly ignored$(NC)"; \
+	else \
+		echo "$(RED)❌ False positive - 1Password reference flagged$(NC)"; \
+	fi
+	@rm -f /tmp/security-test.env
+
+.PHONY: security-log
+security-log: ## View security incident log
+	@echo "$(BLUE)Recent security incidents:$(NC)"
+	@if [ -f .security/incidents.log ]; then \
+		tail -20 .security/incidents.log; \
+	else \
+		echo "$(GREEN)No incidents logged$(NC)"; \
+	fi
+
+.PHONY: security-audit
+security-audit: ## Full security audit of repository
+	@echo "$(BLUE)Running comprehensive security audit...$(NC)"
+	@echo "1. Checking git history for secrets..."
+	@gitleaks detect -s . --log-opts="-100" -c .gitleaks.toml --exit-code 0 || echo "$(YELLOW)⚠ Check findings above$(NC)"
+	@echo ""
+	@echo "2. Checking current files..."
+	@gitleaks detect -s . -c .gitleaks.toml --exit-code 0 || echo "$(YELLOW)⚠ Check findings above$(NC)"
+	@echo ""
+	@echo "3. Checking uncommitted changes..."
+	@gitleaks protect -s . -c .gitleaks.toml --exit-code 0 || echo "$(YELLOW)⚠ Check findings above$(NC)"
+	@echo ""
+	@echo "4. Pre-commit hooks status:"
+	@if [ -f .git/hooks/pre-commit ]; then \
+		echo "$(GREEN)✓ Pre-commit hooks installed$(NC)"; \
+	else \
+		echo "$(RED)❌ Pre-commit hooks not installed$(NC)"; \
+	fi
+	@echo ""
+	@echo "$(GREEN)Audit complete$(NC)"
+
+.PHONY: security-rotate
+security-rotate: ## Guide for rotating secrets (interactive)
+	@echo "$(YELLOW)Secret Rotation Guide$(NC)"
+	@echo "====================="
+	@echo ""
+	@echo "1. Open 1Password and navigate to: Langfuse-Prod vault"
+	@echo "2. Rotate the following secrets:"
+	@echo "   - PostgreSQL password"
+	@echo "   - ClickHouse password"
+	@echo "   - MinIO root password"
+	@echo "   - Redis auth password"
+	@echo "   - Encryption keys and salts"
+	@echo ""
+	@echo "3. After updating in 1Password, run:"
+	@echo "   $(BLUE)make deploy$(NC)"
+	@echo ""
+	@echo "Press Enter to continue..."
+	@read dummy
+
 # Git operations
 .PHONY: git-status
 git-status: ## Show git status
 	@git status
 
 .PHONY: git-commit
-git-commit: ## Commit changes
+git-commit: ## Commit changes (with security scan)
+	@echo "$(BLUE)Running security scan before commit...$(NC)"
+	@make security-scan
 	@git add -A && git commit
 
 # Help target

@@ -9,7 +9,7 @@
 LANGFUSE_VERSION=3.97.0
 LANGFUSE_WORKER_VERSION=3.97.0
 
-# Database Services  
+# Database Services
 POSTGRES_VERSION=17-alpine
 CLICKHOUSE_VERSION=24.3.3.102-alpine
 

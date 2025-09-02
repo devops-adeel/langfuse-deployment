@@ -1,0 +1,112 @@
+# Memory Capture Prompt Templates
+# These are fallback templates used when Langfuse is unavailable
+# Production versions are managed in Langfuse Prompt Management
+
+capture_solution:
+  prompt: |
+    Structure this debugging solution for long-term memory:
+
+    Problem: {{error_description}}
+    Solution: {{solution}}
+
+    Additional Context:
+    - Environment: {{environment}}
+    - Stack Trace: {{stack_trace}}
+    - Command Sequence: {{commands}}
+    - Time to Resolution: {{resolution_time}}
+
+    Generate memory record with:
+    1. Problem signature for future matching
+    2. Solution steps in order
+    3. Key insights and gotchas
+    4. Success indicators
+    5. Related patterns
+
+    Format as structured knowledge for graph storage.
+  config:
+    model: gpt-4o
+    temperature: 0.2
+    max_tokens: 1500
+
+capture_pattern:
+  prompt: |
+    Extract recurring pattern from these observations:
+
+    Pattern Type: {{pattern_type}}
+    Occurrences: {{occurrences}}
+
+    Context:
+    - First Seen: {{first_seen}}
+    - Frequency: {{frequency}}
+    - Variations: {{variations}}
+
+    Capture:
+    1. Pattern signature
+    2. Trigger conditions
+    3. Successful responses
+    4. Anti-patterns to avoid
+    5. Evolution over time
+
+    Structure for pattern recognition and reuse.
+  config:
+    model: gpt-4o
+    temperature: 0.2
+    max_tokens: 1500
+
+capture_tdd_cycle:
+  prompt: |
+    Document this TDD cycle for learning:
+
+    Feature: {{feature_name}}
+
+    Red Phase (Test):
+    {{test_code}}
+
+    Green Phase (Implementation):
+    {{implementation_code}}
+
+    Refactor Phase (Optional):
+    {{refactored_code}}
+
+    Extract:
+    1. Testing strategy used
+    2. Implementation approach
+    3. Key design decisions
+    4. Refactoring insights
+    5. Lessons learned
+
+    Structure as reusable TDD pattern.
+  config:
+    model: gpt-4o
+    temperature: 0.2
+    max_tokens: 2000
+
+capture_session_summary:
+  prompt: |
+    Synthesize this session into lasting insights:
+
+    Session Duration: {{duration}}
+    Tasks Completed: {{completed_tasks}}
+    Problems Solved: {{problems_solved}}
+
+    Key Achievements:
+    {{achievements}}
+
+    Challenges Faced:
+    {{challenges}}
+
+    GTD Progress:
+    {{gtd_progress}}
+
+    Generate:
+    1. Executive summary (2-3 sentences)
+    2. Technical insights discovered
+    3. Process improvements identified
+    4. Cross-domain connections made
+    5. Follow-up actions needed
+
+    Format for both immediate review and long-term learning.
+  config:
+    model: gpt-4o
+    temperature: 0.3
+    max_tokens: 2500

@@ -5,8 +5,10 @@
 COMPOSE_PROJECT_NAME ?= langfuse-prod
 COMPOSE_DIR = compose
 COMPOSE_FILES = -f docker-compose.yml -f docker-compose.backup.yml
+COMPOSE_MEMORY_FILES = $(COMPOSE_FILES) -f docker-compose.memory.yml
 SCRIPTS_DIR = scripts
 BACKUP_DIR = backup
+SRC_DIR = src
 
 # Colors for output
 RED = \033[0;31m
@@ -175,6 +177,36 @@ volume-sizes: ## Show volume disk usage
 		size=$$(docker run --rm -v $$vol:/data alpine du -sh /data 2>/dev/null | cut -f1); \
 		echo "  $$vol: $$size"; \
 	done
+
+# Memory Intelligence Layer operations
+.PHONY: memory-deploy
+memory-deploy: ## Deploy with Memory Intelligence Layer
+	@echo "$(BLUE)Deploying Langfuse with Memory Intelligence...$(NC)"
+	@cd $(COMPOSE_DIR) && docker compose $(COMPOSE_MEMORY_FILES) -p $(COMPOSE_PROJECT_NAME) up -d
+	@echo "$(GREEN)✓ Memory Intelligence Layer deployed$(NC)"
+
+.PHONY: memory-build
+memory-build: ## Build Memory Intelligence containers
+	@echo "$(BLUE)Building Memory Intelligence containers...$(NC)"
+	@docker build -f Dockerfile.memory -t langfuse-memory:latest .
+	@echo "$(GREEN)✓ Build complete$(NC)"
+
+.PHONY: memory-test
+memory-test: ## Test Memory Intelligence API
+	@echo "$(BLUE)Testing Memory Intelligence API...$(NC)"
+	@curl -s http://memory.langfuse.local:8000/health | jq . || echo "$(RED)API not available$(NC)"
+
+.PHONY: memory-patterns
+memory-patterns: ## Extract memory patterns from traces
+	@echo "$(BLUE)Extracting memory patterns...$(NC)"
+	@curl -X POST http://memory.langfuse.local:8000/patterns/extract \
+		-H "Content-Type: application/json" \
+		-d '{"hours_back": 24}' | jq .
+
+.PHONY: memory-evaluators
+memory-evaluators: ## Create memory evaluators in Langfuse
+	@echo "$(BLUE)Creating memory evaluators...$(NC)"
+	@curl -X POST http://memory.langfuse.local:8000/evaluators/create | jq .
 
 # Cleanup operations
 .PHONY: clean

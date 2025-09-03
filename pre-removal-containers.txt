@@ -1,0 +1,36 @@
+CONTAINER ID   IMAGE                                            COMMAND                  CREATED          STATUS                      PORTS                          NAMES
+a1a599edec78   graphiti-mcp-server:latest                       "/docker-entrypoint.…"   26 minutes ago   Up 26 minutes                                              objective_chaplygin
+23cf99718e33   ghcr.io/github/github-mcp-server                 "/server/github-mcp-…"   26 minutes ago   Up 26 minutes                                              modest_mendel
+a023a06362a6   context7/context7                                "docker-entrypoint.s…"   26 minutes ago   Up 26 minutes                                              tender_darwin
+d7e15186e0b9   graphiti-mcp-server:latest                       "/docker-entrypoint.…"   33 minutes ago   Up 33 minutes                                              trusting_lumiere
+f7be80459266   ghcr.io/github/github-mcp-server                 "/server/github-mcp-…"   33 minutes ago   Up 33 minutes                                              sharp_spence
+46c19c4ae946   context7/context7                                "docker-entrypoint.s…"   33 minutes ago   Up 33 minutes                                              festive_murdock
+5348d51d72b2   langfuse/langfuse-worker:3.97.0                  "dumb-init -- ./work…"   7 hours ago      Up 5 minutes                3030/tcp                       langfuse-prod-langfuse-worker-1
+4c6d915eb107   langfuse/langfuse:3.97.0                         "dumb-init -- ./web/…"   7 hours ago      Up 5 minutes                                               langfuse-prod-langfuse-web-1
+5e4c4ad68d8b   redis:7.2.5-alpine                               "docker-entrypoint.s…"   7 hours ago      Up 5 minutes (healthy)      6379/tcp                       langfuse-prod-redis-1
+60053dc64d37   postgres:17-alpine                               "docker-entrypoint.s…"   7 hours ago      Up 5 minutes (healthy)      5432/tcp                       langfuse-prod-postgres-1
+817d9015c09f   clickhouse/clickhouse-server:24.3.3.102-alpine   "/entrypoint.sh"         7 hours ago      Up 5 minutes (healthy)      8123/tcp, 9000/tcp, 9009/tcp   langfuse-prod-clickhouse-1
+bbd9ac2e67b1   minio/minio:latest                               "sh -c 'mkdir -p /da…"   7 hours ago      Up 5 minutes (healthy)      9000/tcp                       langfuse-prod-minio-1
+05b44fa6e78b   graphiti-mcp-server:latest                       "/docker-entrypoint.…"   11 hours ago     Up 11 hours                                                vigilant_jemison
+c82f0199067a   ghcr.io/github/github-mcp-server                 "/server/github-mcp-…"   11 hours ago     Up 11 hours                                                fervent_mclaren
+7b172f60c966   context7/context7                                "docker-entrypoint.s…"   11 hours ago     Up 11 hours                                                brave_carver
+53b16f01fe94   neo4j:5.26-community                             "/bin/sh -c 'echo 'T…"   11 hours ago     Exited (0) 11 hours ago                                    graphiti-test-runner
+e0814d3b5acb   graphiti-claude-code-mcp-graphiti-mcp            "/docker-entrypoint.…"   11 hours ago     Exited (0) 11 hours ago                                    graphiti-claude-code-mcp
+4e06b55e8c9c   offen/docker-volume-backup:v2.43.0               "/usr/bin/backup -fo…"   28 hours ago     Up 28 hours                                                langfuse-prod-backup-1
+3842d0900a14   graphiti-claude-code-mcp-test-behavioral         "/docker-entrypoint.…"   29 hours ago     Exited (1) 29 hours ago                                    graphiti-test-behavioral
+60ce13c59599   graphiti-claude-code-mcp-test-unit               "/docker-entrypoint.…"   29 hours ago     Exited (1) 29 hours ago                                    graphiti-test-unit
+262589fdccc5   neo4j:5.26-community                             "tini -g -- /startup…"   29 hours ago     Exited (143) 29 hours ago                                  graphiti-neo4j-test
+1358d3fc92a6   8dd49ad0aedf                                     "/docker-entrypoint.…"   32 hours ago     Up 31 hours                                                unruffled_ardinghelli
+938acefc3c4f   neo4j:5.26-community                             "tini -g -- /startup…"   2 days ago       Up 2 days (healthy)         7473-7474/tcp, 7687/tcp        neo4j-graphiti
+4decb7654d7f   neo4j:5.26-community                             "tini -g -- /startup…"   2 days ago       Up 2 days                   7473-7474/tcp, 7687/tcp        sharp_herschel
+2402ecd3ee42   redis:7-alpine                                   "docker-entrypoint.s…"   3 days ago       Exited (0) 3 days ago                                      falkordb-health-check
+62e646faa0d8   3b0128e51f81                                     "python mcp_server.py"   3 days ago       Up 3 days                                                  laughing_jones
+637dc0e05f06   falkordb/falkordb:v4.2                           "docker-entrypoint.s…"   4 days ago       Up 4 days (healthy)         6379/tcp                       falkordb
+810de7b80ec7   grafana/alloy:latest                             "/bin/alloy run /etc…"   5 days ago       Up 5 days                                                  grafana-alloy
+465de539f88c   grafana/grafana:latest                           "/run.sh"                5 days ago       Up 5 days (healthy)         3000/tcp                       grafana-main
+c1e6c3345951   oliver006/redis_exporter:latest                  "/redis_exporter --i…"   5 days ago       Up 5 days                   9121/tcp                       redis-exporter
+4d77e6b81600   f1yegor/clickhouse-exporter                      "/usr/local/bin/clic…"   5 days ago       Up 5 days                   9116/tcp                       clickhouse-exporter
+62953ec0397b   grafana/tempo:latest                             "/tempo -config.file…"   5 days ago       Up 5 days                                                  tempo-local
+053c37892882   grafana/loki:latest                              "/usr/bin/loki -conf…"   5 days ago       Up 5 days                   3100/tcp                       loki-local
+c36d26bfa3c0   prom/prometheus:latest                           "/bin/prometheus --c…"   5 days ago       Up 5 days                   9090/tcp                       prometheus-local
+463b700e4a36   gcr.io/cadvisor/cadvisor:latest                  "/usr/bin/cadvisor -…"   5 days ago       Up 5 days (healthy)         8080/tcp                       cadvisor

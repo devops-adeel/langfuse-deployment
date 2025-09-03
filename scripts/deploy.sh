@@ -105,7 +105,7 @@ inject_secrets() {
     # Inject secrets into temporary file
     if ! op inject -i "$TEMPLATE_FILE" -o "$TEMP_ENV" 2>/dev/null; then
         log_error "Failed to inject secrets from 1Password."
-        log_info "Please ensure the 'Langfuse-Prod' vault exists with all required items."
+        log_info "Please ensure the 'HomeLab' vault exists with all required items."
         exit 1
     fi
 

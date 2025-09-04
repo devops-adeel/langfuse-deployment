@@ -120,8 +120,8 @@ The `scripts/deploy.sh` handles the injection, deployment, and cleanup automatic
 ## Service Architecture
 
 ### Core Services
-- **langfuse-web**: Main application (https://langfuse.local)
-- **langfuse-worker**: Background job processor (https://worker.langfuse.local)
+- **langfuse-web**: Main application (http://langfuse.local)
+- **langfuse-worker**: Background job processor (http://worker.langfuse.local)
 
 ### Data Layer
 - **PostgreSQL** (v17-alpine): Primary database for application data
@@ -140,9 +140,9 @@ All service versions are pinned in `versions.lock` for controlled updates.
 
 ### Domain-Based Access (No Port Mappings)
 ```
-https://langfuse.local          # Main application
-https://minio.local             # MinIO console
-https://clickhouse.local        # ClickHouse HTTP interface
+http://langfuse.local          # Main application
+http://minio.local             # MinIO console
+http://clickhouse.local        # ClickHouse HTTP interface
 postgres.langfuse.local:5432    # PostgreSQL
 redis.langfuse.local:6379       # Redis
 ```

@@ -243,7 +243,7 @@ verify_restoration() {
 
     log_info "Restoration complete!"
     echo ""
-    log_info "Please verify your data at: https://langfuse.local"
+    log_info "Please verify your data at: http://langfuse.local"
     log_info "Check logs with: make logs"
 }
 

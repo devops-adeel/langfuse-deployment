@@ -3,13 +3,13 @@
 # All services are accessible via custom domains (*.local) without port mappings
 #
 # Service Access:
-#   - Langfuse Web: https://langfuse.local
-#   - MinIO Console: https://minio.local (port 9000)
-#   - MinIO API: https://s3.langfuse.local
+#   - Langfuse Web: http://langfuse.local
+#   - MinIO Console: http://minio.local (port 9000)
+#   - MinIO API: http://s3.langfuse.local
 #   - PostgreSQL: postgres.langfuse.local:5432
-#   - ClickHouse HTTP: https://clickhouse.local
+#   - ClickHouse HTTP: http://clickhouse.local
 #   - Redis: redis.langfuse.local:6379
-#   - Worker: https://worker.langfuse.local
+#   - Worker: http://worker.langfuse.local
 #
 # OrbStack automatic domains (no configuration needed):
 #   - https://langfuse-web.langfuse-prod.orb.local
@@ -53,7 +53,7 @@ services:
 
     environment: &langfuse-worker-env
       # External access URL (uses OrbStack domain)
-      NEXTAUTH_URL: https://langfuse.local
+      NEXTAUTH_URL: http://langfuse.local
 
       # Database configuration
       DATABASE_URL: ${DATABASE_URL}
@@ -89,7 +89,7 @@ services:
       LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID:-minio}
       LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY}
       LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: ${LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT:-http://minio:9000}
-      LANGFUSE_S3_MEDIA_UPLOAD_EXTERNAL_ENDPOINT: https://minio.local
+      LANGFUSE_S3_MEDIA_UPLOAD_EXTERNAL_ENDPOINT: http://minio.local
       LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: ${LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE:-true}
       LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: ${LANGFUSE_S3_MEDIA_UPLOAD_PREFIX:-media/}
 
@@ -99,7 +99,7 @@ services:
       LANGFUSE_S3_BATCH_EXPORT_PREFIX: ${LANGFUSE_S3_BATCH_EXPORT_PREFIX:-exports/}
       LANGFUSE_S3_BATCH_EXPORT_REGION: ${LANGFUSE_S3_BATCH_EXPORT_REGION:-auto}
       LANGFUSE_S3_BATCH_EXPORT_ENDPOINT: ${LANGFUSE_S3_BATCH_EXPORT_ENDPOINT:-http://minio:9000}
-      LANGFUSE_S3_BATCH_EXPORT_EXTERNAL_ENDPOINT: https://minio.local
+      LANGFUSE_S3_BATCH_EXPORT_EXTERNAL_ENDPOINT: http://minio.local
       LANGFUSE_S3_BATCH_EXPORT_ACCESS_KEY_ID: ${LANGFUSE_S3_BATCH_EXPORT_ACCESS_KEY_ID:-minio}
       LANGFUSE_S3_BATCH_EXPORT_SECRET_ACCESS_KEY: ${LANGFUSE_S3_BATCH_EXPORT_SECRET_ACCESS_KEY}
       LANGFUSE_S3_BATCH_EXPORT_FORCE_PATH_STYLE: ${LANGFUSE_S3_BATCH_EXPORT_FORCE_PATH_STYLE:-true}

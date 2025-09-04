@@ -333,8 +333,8 @@ create_report() {
         echo "4. Remove temporary secrets file"
         echo ""
         echo "## Access Points"
-        echo "- Langfuse Web: https://langfuse.local"
-        echo "- MinIO Console: https://minio.local"
+        echo "- Langfuse Web: http://langfuse.local"
+        echo "- MinIO Console: http://minio.local"
         echo ""
     } > "$report_file"
 

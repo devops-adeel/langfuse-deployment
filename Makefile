@@ -222,10 +222,10 @@ pull: ## Pull latest images
 .PHONY: urls
 urls: ## Show service URLs
 	@echo "$(BLUE)Service URLs:$(NC)"
-	@echo "  Langfuse Web:  $(GREEN)https://langfuse.local$(NC)"
-	@echo "  MinIO Console: $(GREEN)https://minio.local$(NC)"
+	@echo "  Langfuse Web:  $(GREEN)http://langfuse.local$(NC)"
+	@echo "  MinIO Console: $(GREEN)http://minio.local$(NC)"
 	@echo "  PostgreSQL:    $(GREEN)postgres.langfuse.local:5432$(NC)"
-	@echo "  ClickHouse:    $(GREEN)https://clickhouse.local$(NC)"
+	@echo "  ClickHouse:    $(GREEN)http://clickhouse.local$(NC)"
 	@echo "  Redis:         $(GREEN)redis.langfuse.local:6379$(NC)"
 	@echo ""
 	@echo "$(BLUE)Default credentials:$(NC)"

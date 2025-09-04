@@ -19,10 +19,10 @@ COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-langfuse-prod}"
 VERBOSE="${VERBOSE:-false}"
 
 # Service endpoints
-WEB_URL="https://langfuse.local"
-MINIO_URL="https://minio.local"
+WEB_URL="http://langfuse.local"
+MINIO_URL="http://minio.local"
 POSTGRES_HOST="postgres.langfuse.local"
-CLICKHOUSE_URL="https://clickhouse.local"
+CLICKHOUSE_URL="http://clickhouse.local"
 REDIS_HOST="redis.langfuse.local"
 
 # Health status tracking

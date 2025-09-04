@@ -17,7 +17,7 @@ make deploy
 make health
 
 # 5. Access Langfuse
-open https://langfuse.local
+open http://langfuse.local
 ```
 
 ## 📋 Table of Contents
@@ -270,10 +270,10 @@ After deployment, services are available at:
 
 | Service | URL | Purpose |
 |---------|-----|---------|
-| Langfuse Web | https://langfuse.local | Main application |
-| MinIO Console | https://minio.local | Object storage UI |
+| Langfuse Web | http://langfuse.local | Main application |
+| MinIO Console | http://minio.local | Object storage UI |
 | PostgreSQL | postgres.langfuse.local:5432 | Database |
-| ClickHouse | https://clickhouse.local | Analytics database |
+| ClickHouse | http://clickhouse.local | Analytics database |
 | Redis | redis.langfuse.local:6379 | Cache/Queue |
 
 ### Default Credentials
@@ -448,7 +448,7 @@ op account list
 #### 2. Port Conflicts
 
 If port 3000 is already in use:
-- Use OrbStack domains: `https://langfuse.local`
+- Use OrbStack domains: `http://langfuse.local`
 - Or modify port in `docker-compose.yml`
 
 #### 3. Services Not Healthy

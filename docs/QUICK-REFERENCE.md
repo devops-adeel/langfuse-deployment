@@ -4,10 +4,10 @@
 
 | Service | URL | Login | Purpose |
 |---------|-----|-------|---------|
-| **Langfuse** | https://langfuse.local | demo@langfuse.com / password | LLM observability platform |
-| **MinIO** | https://minio.local | minioadmin / [1Password] | Object storage console |
+| **Langfuse** | http://langfuse.local | demo@langfuse.com / password | LLM observability platform |
+| **MinIO** | http://minio.local | minioadmin / [1Password] | Object storage console |
 | **PostgreSQL** | postgres.langfuse.local:5432 | postgres / [1Password] | Primary database |
-| **ClickHouse** | https://clickhouse.local | default / [1Password] | Analytics database |
+| **ClickHouse** | http://clickhouse.local | default / [1Password] | Analytics database |
 | **Redis** | redis.langfuse.local:6379 | - / [1Password] | Cache & queue |
 | **Grafana** | http://grafana.local | admin / admin | Infrastructure monitoring |
 | **Prometheus** | http://prometheus.local | - | Metrics storage |
@@ -93,7 +93,7 @@ curl -X POST http://alloy.local:4318/v1/traces \
   -d '{"resourceSpans":[]}'
 
 # 2. Check Langfuse metadata
-curl https://langfuse.local/api/public/traces | \
+curl http://langfuse.local/api/public/traces | \
   jq '.data[0].metadata'
 
 # 3. Verify Tempo ingestion
@@ -116,11 +116,11 @@ ls -la ~/LangfuseBackups/
 
 | Component | Check Command | Expected Output | Action if Failed |
 |-----------|--------------|-----------------|------------------|
-| **Langfuse Web** | `curl https://langfuse.local/api/health` | `{"status":"OK"}` | `make restart` |
+| **Langfuse Web** | `curl http://langfuse.local/api/health` | `{"status":"OK"}` | `make restart` |
 | **PostgreSQL** | `make db-shell` → `\conninfo` | Connection info | Check passwords |
 | **ClickHouse** | `curl http://clickhouse.local:8123/ping` | `Ok.` | Restart service |
 | **Redis** | `docker exec redis-1 redis-cli ping` | `PONG` | Check password |
-| **MinIO** | `curl https://minio.local/minio/health/live` | `{}` | Check credentials |
+| **MinIO** | `curl http://minio.local/minio/health/live` | `{}` | Check credentials |
 | **Grafana** | `curl http://grafana.local/api/health` | `{"database":"ok"}` | Check data sources |
 
 ## 🔄 Integration Points
@@ -132,7 +132,7 @@ tempo_trace_id = "abc123..."
 langfuse_trace_id = "lf_xyz..."
 
 # View in Langfuse
-open(f"https://langfuse.local/trace/{langfuse_trace_id}")
+open(f"http://langfuse.local/trace/{langfuse_trace_id}")
 
 # View in Tempo
 open(f"http://grafana.local/explore?traceID={tempo_trace_id}")
@@ -141,7 +141,7 @@ open(f"http://grafana.local/explore?traceID={tempo_trace_id}")
 ### Cost Analysis
 ```bash
 # LLM costs (Langfuse)
-curl https://langfuse.local/api/public/metrics/daily | \
+curl http://langfuse.local/api/public/metrics/daily | \
   jq '.data[0].totalCost'
 
 # Infrastructure costs (Prometheus)

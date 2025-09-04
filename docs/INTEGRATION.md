@@ -23,7 +23,7 @@ Add to your application's environment:
 # Enable W3C Trace Context
 export OTEL_TRACES_EXPORTER=otlp
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy.local:4318
-export LANGFUSE_HOST=https://langfuse.local
+export LANGFUSE_HOST=http://langfuse.local
 ```
 
 ### 3. Instrument Your Code
@@ -56,7 +56,7 @@ async def process_request(query: str):
 
 ### 4. View Correlated Traces
 
-- **Langfuse**: https://langfuse.local → Select trace → Check metadata for `tempo_trace_id`
+- **Langfuse**: http://langfuse.local → Select trace → Check metadata for `tempo_trace_id`
 - **Grafana**: http://grafana.local → Explore → Tempo → Search by trace ID
 
 ## Pre-configured Grafana Dashboards
@@ -135,7 +135,7 @@ Import to Grafana: `http://grafana.local/dashboard/import`
 
 ```bash
 # 1. Find slow traces in Langfuse
-curl https://langfuse.local/api/public/traces \
+curl http://langfuse.local/api/public/traces \
   -H "Authorization: Bearer $LANGFUSE_SECRET_KEY" \
   --data '{"filter": {"latency": {">": 5000}}}'
 
@@ -167,7 +167,7 @@ def check_memory_loops(trace_id: str):
 
     if len([s for s in spans if "memory_search" in s["name"]]) > 10:
         print(f"⚠️ Memory loop detected in trace {trace_id}")
-        print(f"View in Langfuse: https://langfuse.local/trace/{trace_id}")
+        print(f"View in Langfuse: http://langfuse.local/trace/{trace_id}")
         print(f"View in Tempo: http://grafana.local/explore?traceID={trace_id}")
 ```
 
@@ -177,7 +177,7 @@ def check_memory_loops(trace_id: str):
 def analyze_trace_cost(langfuse_trace_id: str):
     # Get LLM costs from Langfuse
     langfuse_response = requests.get(
-        f"https://langfuse.local/api/public/traces/{langfuse_trace_id}"
+        f"http://langfuse.local/api/public/traces/{langfuse_trace_id}"
     )
     llm_cost = langfuse_response.json()["totalCost"]
 
@@ -198,7 +198,7 @@ def analyze_trace_cost(langfuse_trace_id: str):
         "llm_cost_usd": llm_cost,
         "infrastructure_cost_usd": infra_cost,
         "total_cost_usd": llm_cost + infra_cost,
-        "langfuse_url": f"https://langfuse.local/trace/{langfuse_trace_id}",
+        "langfuse_url": f"http://langfuse.local/trace/{langfuse_trace_id}",
         "tempo_url": f"http://grafana.local/explore?traceID={tempo_id}"
     }
 ```
@@ -226,7 +226,7 @@ When Langfuse shows high latency:
 docker stats --no-stream | grep langfuse
 
 # 2. Check recent traces
-curl https://langfuse.local/api/public/metrics/daily | jq '.data[0]'
+curl http://langfuse.local/api/public/metrics/daily | jq '.data[0]'
 
 # 3. View infrastructure correlation
 open "http://grafana.local/d/langfuse-ops"
@@ -296,7 +296,7 @@ otelcol.exporter.otlp "tempo" {
 
 ## Links
 
-- [Langfuse Dashboard](https://langfuse.local)
+- [Langfuse Dashboard](http://langfuse.local)
 - [Grafana Dashboards](http://grafana.local)
 - [Prometheus Metrics](http://prometheus.local)
 - [Tempo Traces](http://tempo.local)

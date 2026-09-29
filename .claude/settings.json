@@ -1,0 +1,31 @@
+{
+  "_comment": [
+    "ROLE 1 - infra. Operates the Langfuse deployment: compose, images, upgrades,",
+    "backups, env. This role legitimately needs docker and psql, so there is no",
+    "attempt to deny them - that would be theatre, and prefix-matched Bash rules",
+    "could not enforce it anyway (Bash(docker exec *) misses 'docker --context X exec').",
+    "",
+    "SCOPE NOTE: until the override migrates out, role 1 spans TWO directories -",
+    "this repo AND ~/Documents/1-projects/langfuse, where docker-compose.override.yml",
+    "currently holds the live version pins, the ClickHouse digest pin and the v4",
+    "migration flags. That override is untracked and NOT gitignored, so 'git clean -fd'",
+    "in that directory destroys production config. Do not run it.",
+    "",
+    "CROSS-ROLE CONTRACT: Langfuse excludes database schemas from semantic versioning.",
+    "langfuse_monitor_provision.py writes the monitors table directly, so a patch-level",
+    "server upgrade can break role 2's monitors silently. After ANY upgrade, run:",
+    "  python ~/.hermes/scripts/langfuse_monitor_provision.py verify",
+    "  python ~/1-projects/hermes-agent/evals/lf_compat.py"
+  ],
+  "permissions": {
+    "deny": [
+      "Edit(**/hermes-agent/evals/**)",
+      "Write(**/hermes-agent/evals/**)",
+      "Edit(**/langfuse-config/**)",
+      "Write(**/langfuse-config/**)"
+    ]
+  },
+  "env": {
+    "LANGFUSE_ROLE": "infra"
+  }
+}

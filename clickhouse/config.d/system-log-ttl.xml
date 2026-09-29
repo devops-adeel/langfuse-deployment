@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<!--
+  ClickHouse system-log retention.  ROLE 1 (infra) owns this file.
+
+  *** NOT CURRENTLY MOUNTED — see "HOW TO APPLY IT SAFELY" below. ***
+
+  WHY THIS EXISTS
+    ClickHouse ships its own diagnostic log tables with NO TTL by default. Only
+    processors_profile_log had one on this deployment. Left alone they grow without
+    bound: measured 2026-09-29, the `system` database held 35.72 GiB against 14.72 MiB
+    of actual Langfuse data in `default` — a ratio of roughly 2,400:1. trace_log alone
+    was 19.65 GiB / 931 M rows, taking ~12 M profiler samples per day.
+
+  WHY IT IS A CONFIG FILE AND NOT `ALTER TABLE`
+    The TTLs were first applied with ALTER TABLE ... MODIFY TTL, which works and
+    survives a restart — but ClickHouse (re)creates system log tables from THIS config
+    at startup, so a version upgrade that recreates them would silently drop an
+    ALTER-applied TTL and the growth would resume unnoticed. Declaring them here makes
+    the retention a property of the deployment rather than of the current table.
+
+  COLUMN NAMES ARE NOT UNIFORM
+    Most system log tables partition on `event_date`. opentelemetry_span_log does NOT —
+    it uses `finish_date`, and an event_date TTL on it fails with
+    `Code: 47 ... Missing columns: 'event_date'`. Verified per-table before writing.
+
+  RETENTION RATIONALE
+     3d  trace_log            profiler samples; only useful while debugging live
+     7d  text_log             server log lines; a week covers a weekend incident
+     7d  opentelemetry_span_log
+    14d  metric_log, asynchronous_metric_log, part_log   trend/merge debugging
+    30d  query_log            small (~150 MiB) and genuinely useful for slow queries
+    30d  processors_profile_log  pre-existing default, left as-is
+     7d  everything else      small today, unbounded tomorrow
+
+  HOW TO APPLY IT SAFELY  (this bit was learned the hard way, 2026-09-29)
+    Mounting this file requires recreating the clickhouse service, and that is only safe
+    when the merge backlog has drained. It was first applied while ~870 inactive parts
+    (~32 GiB) were still pending cleanup from the initial ALTER-applied TTLs. On restart
+    ClickHouse re-scanned that backlog and resumed materialising the 14-day TTL across
+    asynchronous_metric_log's 4.6 BILLION rows, which pegged the OrbStack VM at ~500% CPU
+    for over half an hour, took the Docker daemon unresponsive, and took down every other
+    containerised workload on the machine — not just Langfuse. The mount was reverted.
+
+    Before mounting, confirm the backlog is drained:
+      SELECT active, count(), formatReadableSize(sum(bytes_on_disk))
+      FROM system.parts WHERE database='system' GROUP BY active;
+    Inactive should be small (well under 1 GiB). Then:
+      cd ~/Documents/1-projects/langfuse
+      # re-add the bind mount to docker-compose.override.yml (see git history of this repo)
+      docker compose up -d clickhouse
+
+    Note the reclaim does NOT depend on this file. The ALTER TABLE ... MODIFY TTL
+    statements already applied took `system` from 35.72 GiB to 3.04 GiB and persist across
+    restarts. This file only protects against a future VERSION UPGRADE recreating the
+    system tables from config and silently dropping those TTLs.
+
+  TO CHANGE RETENTION
+    Edit here, then recreate the clickhouse service with BOTH compose files:
+      cd ~/Documents/1-projects/langfuse
+      docker compose up -d clickhouse
+    Confirm with:
+      SELECT name, extract(engine_full,'TTL[^S]*') FROM system.tables
+      WHERE database='system' AND engine LIKE '%MergeTree%';
+-->
+<clickhouse>
+    <trace_log>
+        <ttl>event_date + INTERVAL 3 DAY DELETE</ttl>
+    </trace_log>
+
+    <text_log>
+        <ttl>event_date + INTERVAL 7 DAY DELETE</ttl>
+    </text_log>
+
+    <!-- finish_date, NOT event_date -->
+    <opentelemetry_span_log>
+        <ttl>finish_date + INTERVAL 7 DAY DELETE</ttl>
+    </opentelemetry_span_log>
+
+    <metric_log>
+        <ttl>event_date + INTERVAL 14 DAY DELETE</ttl>
+    </metric_log>
+
+    <asynchronous_metric_log>
+        <ttl>event_date + INTERVAL 14 DAY DELETE</ttl>
+    </asynchronous_metric_log>
+
+    <part_log>
+        <ttl>event_date + INTERVAL 14 DAY DELETE</ttl>
+    </part_log>
+
+    <query_log>
+        <ttl>event_date + INTERVAL 30 DAY DELETE</ttl>
+    </query_log>
+
+    <processors_profile_log>
+        <ttl>event_date + INTERVAL 30 DAY DELETE</ttl>
+    </processors_profile_log>
+
+    <!-- Small today, unbounded tomorrow. Capped so this does not recur. -->
+    <query_views_log>
+        <ttl>event_date + INTERVAL 7 DAY DELETE</ttl>
+    </query_views_log>
+
+    <query_metric_log>
+        <ttl>event_date + INTERVAL 7 DAY DELETE</ttl>
+    </query_metric_log>
+
+    <asynchronous_insert_log>
+        <ttl>event_date + INTERVAL 7 DAY DELETE</ttl>
+    </asynchronous_insert_log>
+
+    <backup_log>
+        <ttl>event_date + INTERVAL 30 DAY DELETE</ttl>
+    </backup_log>
+
+    <error_log>
+        <ttl>event_date + INTERVAL 30 DAY DELETE</ttl>
+    </error_log>
+
+    <background_schedule_pool_log>
+        <ttl>event_date + INTERVAL 7 DAY DELETE</ttl>
+    </background_schedule_pool_log>
+</clickhouse>

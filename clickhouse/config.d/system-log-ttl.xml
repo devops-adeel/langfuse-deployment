@@ -2,7 +2,9 @@
 <!--
   ClickHouse system-log retention.  ROLE 1 (infra) owns this file.
 
-  *** NOT CURRENTLY MOUNTED — see "HOW TO APPLY IT SAFELY" below. ***
+  STATUS (2026-10-15): mount STAGED in langfuse/docker-compose.override.yml; takes
+  effect on the next `docker compose up -d clickhouse`. Preconditions verified that day:
+  inactive parts 172 MiB, 0 merges, 0 mutations, largest log table 2.35 GiB.
 
   WHY THIS EXISTS
     ClickHouse ships its own diagnostic log tables with NO TTL by default. Only
@@ -12,11 +14,17 @@
     was 19.65 GiB / 931 M rows, taking ~12 M profiler samples per day.
 
   WHY IT IS A CONFIG FILE AND NOT `ALTER TABLE`
-    The TTLs were first applied with ALTER TABLE ... MODIFY TTL, which works and
-    survives a restart — but ClickHouse (re)creates system log tables from THIS config
-    at startup, so a version upgrade that recreates them would silently drop an
-    ALTER-applied TTL and the growth would resume unnoticed. Declaring them here makes
-    the retention a property of the deployment rather than of the current table.
+    The TTLs were first applied with ALTER TABLE ... MODIFY TTL. That works until the
+    next restart and NO LONGER. On boot ClickHouse compares each system log table with
+    its config; on mismatch it renames the table aside (trace_log -> trace_log_0) and
+    creates a fresh one FROM CONFIG. After the 2026-10-02 host reboot every
+    ALTER-applied TTL was gone, *_0 tables had appeared, and `system` had regrown from
+    3.04 GiB to 7.54 GiB.
+
+    CORRECTION: earlier versions of this header (and commits 5ae25c9, and the estate
+    audit) claimed ALTER-applied TTLs "persist across restarts" and that this file only
+    guarded against version upgrades. That was wrong. Without this file, retention
+    lasts exactly until the next restart.
 
   COLUMN NAMES ARE NOT UNIFORM
     Most system log tables partition on `event_date`. opentelemetry_span_log does NOT —
@@ -46,13 +54,14 @@
       FROM system.parts WHERE database='system' GROUP BY active;
     Inactive should be small (well under 1 GiB). Then:
       cd ~/Documents/1-projects/langfuse
-      # re-add the bind mount to docker-compose.override.yml (see git history of this repo)
+      # the bind mount is already in docker-compose.override.yml (staged 2026-10-15)
       docker compose up -d clickhouse
 
-    Note the reclaim does NOT depend on this file. The ALTER TABLE ... MODIFY TTL
-    statements already applied took `system` from 35.72 GiB to 3.04 GiB and persist across
-    restarts. This file only protects against a future VERSION UPGRADE recreating the
-    system tables from config and silently dropping those TTLs.
+    After mounting, ClickHouse will rename the current TTL-less tables aside again
+    (*_1) and create TTL'd ones. The renamed tables keep their data with NO TTL, so
+    drop them once the new tables are confirmed:
+      SELECT name, formatReadableSize(total_bytes) FROM system.tables
+      WHERE database='system' AND match(name, '_[0-9]+$');
 
   TO CHANGE RETENTION
     Edit here, then recreate the clickhouse service with BOTH compose files:

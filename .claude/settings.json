@@ -26,6 +26,40 @@
     ]
   },
   "env": {
-    "LANGFUSE_ROLE": "infra"
+    "LANGFUSE_ROLE": "infra",
+    "LANGFUSE_HOST": "http://lf.estate:3000",
+    "LANGFUSE_BASE_URL": "http://lf.estate:3000"
+  },
+  "sandbox": {
+    "enabled": true,
+    "allowUnsandboxedCommands": true,
+    "excludedCommands": [
+      "docker *",
+      "herdr *",
+      "crit *",
+      "lf-estate *",
+      "lf-probe *",
+      "bin/lf-probe *"
+    ],
+    "filesystem": {
+      "allowWrite": [
+        "/Users/adeelahmad/.cache/uv",
+        "/Users/adeelahmad/Library/Caches/pip",
+        "/tmp",
+        "/private/tmp",
+        "/Users/adeelahmad/Documents/1-projects/langfuse",
+        "/Users/adeelahmad/LangfuseBackups"
+      ]
+    },
+    "network": {
+      "httpProxyPort": 3193,
+      "allowedDomains": [
+        "lf.estate:3000"
+      ],
+      "strictAllowlist": true
+    }
+  },
+  "enabledPlugins": {
+    "lf-estate@lf-estate": true
   }
 }

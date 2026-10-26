@@ -32,16 +32,17 @@
   },
   "sandbox": {
     "enabled": true,
-    "allowUnsandboxedCommands": true,
+    "allowUnsandboxedCommands": false,
     "excludedCommands": [
       "docker *",
       "herdr *",
       "crit *",
-      "lf-estate *",
-      "lf-probe *",
-      "bin/lf-probe *"
+      "/Users/adeelahmad/Developer/lf-estate/plugins/lf-estate/bin/lf-estate *"
     ],
     "filesystem": {
+      "denyRead": [
+        "~/.lf-estate/secrets"
+      ],
       "allowWrite": [
         "/Users/adeelahmad/.cache/uv",
         "/Users/adeelahmad/Library/Caches/pip",

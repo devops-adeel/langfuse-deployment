@@ -13,6 +13,20 @@ not what is configured inside it.
 
 Load the `langfuse-this-instance` skill before acting.
 
+## Canonical paths
+
+| What | Path |
+|---|---|
+| This repo (infra, role 1) | `~/Developer/langfuse-deployment` |
+| Live compose dir | `~/Documents/1-projects/langfuse` |
+| Admin (role 2) | `~/Developer/langfuse-config` |
+| Analyst (role 3) | `~/Developer/hermes-agent` |
+| Langfuse, from a sandboxed session | `http://lf.estate:3000` (via the infra proxy on `:3193`) |
+
+`~/1-projects/*` and `~/.hermes/scripts/*` are symlinks into these. Use the canonical paths.
+The `192.168.8.211:3000` address in `langfuse-this-instance` is not on the sandbox
+allowlist. Use `lf.estate:3000`.
+
 ## The live stack is not where you'd expect
 
 This repo is pinned at `3.97.0` under compose project `langfuse-prod`, **and it runs
@@ -40,15 +54,15 @@ repo to the live stack is planned work, not an accident to fix casually.
 ## Cross-role contract — you can silently break role 2
 
 Langfuse's versioning policy excludes **database schemas** from semver ("internal
-implementation details", no major bump). `~/.hermes/scripts/langfuse_monitor_provision.py`
+implementation details", no major bump). `langfuse_monitor_provision.py` (role 2's tool)
 writes the `monitors` table directly, because no write API exists. **A patch-level upgrade
 can break it with no error anywhere.**
 
 After *any* server version change, run both and report the result:
 
 ```bash
-python ~/.hermes/scripts/langfuse_monitor_provision.py verify   # forces a real transition
-python ~/1-projects/hermes-agent/evals/lf_compat.py             # cutover gate, exit 0 = safe
+python ~/Developer/langfuse-config/tools/langfuse_monitor_provision.py verify  # forces a real transition
+python ~/Developer/hermes-agent/evals/lf_compat.py                             # cutover gate, exit 0 = safe
 ```
 
 ## Before any upgrade
@@ -60,8 +74,8 @@ estate, and the pattern worth copying rather than replacing.
 
 ## What you must not do
 
-- Do not edit `~/1-projects/hermes-agent/evals/` (escrow chain) or
-  `~/1-projects/langfuse-config/` (role 2). Both are denied in `.claude/settings.json`.
+- Do not edit `~/Developer/hermes-agent/evals/` (escrow chain) or
+  `~/Developer/langfuse-config/` (role 2). Both are denied in `.claude/settings.json`.
 - Do not create Langfuse content — prompts, evaluators, dashboards, monitors. Hand that to
   the admin role.
 - Do not add new secrets to this stack while `SALT`, `ENCRYPTION_KEY`, `NEXTAUTH_SECRET`,
